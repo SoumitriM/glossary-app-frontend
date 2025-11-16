@@ -1,7 +1,3 @@
-# -------------------------------------------------
-# 🌿 Basic Node/Vite Project Git Ignore
-# -------------------------------------------------
-
 # Dependencies
 node_modules/
 
@@ -11,7 +7,7 @@ node_modules/
 !.env.example   # keep example envs tracked
 
 # Build output
-dist/
+
 build/
 out/
 *.zip
@@ -60,3 +56,4 @@ vite.config.ts.timestamp-*
 pids/
 pids/*
 logs/*
+dist/

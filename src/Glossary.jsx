@@ -26,7 +26,6 @@ export default function Glossary() {
 
   // 📖 Fetch glossary entries
   const fetchData = () => {
-    setIsLoading(true);
     const url =
       search !== ""
         ? `${BASE_URLS.SEARCH}?q=${search}&lang=${searchLang}`
@@ -40,8 +39,13 @@ export default function Glossary() {
   };
 
   useEffect(() => {
-    if (search || searchLang) fetchData();
+    const timeout = setTimeout(() => {
+      fetchData();
+    }, 400);
+
+    return () => clearTimeout(timeout);
   }, [search, searchLang]);
+
 
   // Delete single row
   const handleDeleteRow = async (id) => {

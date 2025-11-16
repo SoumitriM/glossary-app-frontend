@@ -13,17 +13,20 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useNavigate } from "react-router-dom";
 import { BASE_URLS } from "./config";
+import { api } from "./apiClient"; // ✅ CORRECT IMPORT
 
 export default function Login() {
   const [showPassword, setShowPassword] = React.useState(false);
   const [isRegister, setIsRegister] = React.useState(false);
-  const [message, setMessage] = React.useState(null); // ✅ success/error message
-  const [severity, setSeverity] = React.useState("info"); // "success" | "error" | "info"
+  const [message, setMessage] = React.useState(null);
+  const [severity, setSeverity] = React.useState("info");
+  const [fade, setFade] = React.useState(true); // ✅ smooth mode transition
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage(null); // clear previous message
+    setMessage(null);
 
     const form = new FormData(e.currentTarget);
     const username = form.get("username");
@@ -32,48 +35,50 @@ export default function Login() {
     const endpoint = isRegister ? BASE_URLS.REGISTER : BASE_URLS.LOGIN;
 
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
+      const response = await api.post(endpoint, { username, password }); // ✅ API CLIENT USED
+      const data = response;
 
-      const data = await response.json();
+      if (isRegister) {
+        // --- SIGNUP SUCCESS ---
+        setSeverity("success");
+        setMessage("Sign up successful! Please log in.");
 
-      if (response.ok) {
-        if (isRegister) {
-          // ✅ Registration success → switch to login mode
+        // Fade animation on mode switch
+        setFade(false);
+        setTimeout(() => {
           setIsRegister(false);
-          setSeverity("success");
-          setMessage("✅ Sign up successful! Login to get started.");
-        } else {
-          // ✅ Login success
-          if (data.token) {
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("username", data.username);
-          }
-          navigate("/");
-        }
-      } else {
-        // ❌ Backend error (e.g., invalid credentials)
-        setSeverity("error");
-        setMessage(data.error || data.message || "Something went wrong");
+          setFade(true);
+        }, 200);
+
+        return;
       }
+
+      // --- LOGIN SUCCESS ---
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("username", data.username);
+      }
+
+      navigate("/");
     } catch (err) {
-      console.error(err);
       setSeverity("error");
-      setMessage("⚠️ Error connecting to server");
+      setMessage(
+        err?.message || "Something went wrong. Please try again."
+      );
     }
   };
 
   return (
     <Box
-      maxWidth="2xl"
       mx="auto"
       display="flex"
       justifyContent="center"
       alignItems="center"
-      sx={{ height: "80vh" }}
+      sx={{
+        height: "80vh",
+        width: "40rem",
+        maxWidth: "90vw",
+      }}
     >
       <Paper
         elevation={6}
@@ -81,7 +86,9 @@ export default function Login() {
           p: 4,
           borderRadius: 4,
           width: "100%",
-          maxWidth: 400,
+          maxWidth: "32rem",
+          transition: "opacity 0.25s ease",  // ✅ smooth transition
+          opacity: fade ? 1 : 0.4,
         }}
       >
         <Typography
@@ -95,7 +102,6 @@ export default function Login() {
           {isRegister ? "Create a New Account" : "Login to Your Account"}
         </Typography>
 
-        {/* ✅ Info / Error Banner */}
         {message && (
           <Alert
             severity={severity}
@@ -162,8 +168,14 @@ export default function Login() {
               <Link
                 component="button"
                 onClick={() => {
-                  setIsRegister(false);
                   setMessage(null);
+
+                  // Smooth fade transition
+                  setFade(false);
+                  setTimeout(() => {
+                    setIsRegister(false);
+                    setFade(true);
+                  }, 200);
                 }}
                 underline="hover"
               >
@@ -176,8 +188,13 @@ export default function Login() {
               <Link
                 component="button"
                 onClick={() => {
-                  setIsRegister(true);
                   setMessage(null);
+
+                  setFade(false);
+                  setTimeout(() => {
+                    setIsRegister(true);
+                    setFade(true);
+                  }, 200);
                 }}
                 underline="hover"
               >
