@@ -2,9 +2,9 @@
 node_modules/
 
 # Local environment files
-.env
-.env.*
-!.env.example   # keep example envs tracked
+# .env
+# .env.*
+# !.env.example   # keep example envs tracked
 
 # Build output
 
@@ -56,4 +56,5 @@ vite.config.ts.timestamp-*
 pids/
 pids/*
 logs/*
+# dist/
 dist/
