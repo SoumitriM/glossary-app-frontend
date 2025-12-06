@@ -23,7 +23,6 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import { visuallyHidden } from "@mui/utils";
 import { alpha } from "@mui/material/styles";
 import EditDialog from "./EditDialog";
@@ -130,7 +129,7 @@ function EnhancedTableHead({
   );
 }
 
-function EnhancedTableToolbar({ numSelected, onDeleteSelected }) {
+function EnhancedTableToolbar({ numSelected, onDeleteSelected, totalCount }) {
   return (
     <Toolbar
       sx={{
@@ -151,11 +150,11 @@ function EnhancedTableToolbar({ numSelected, onDeleteSelected }) {
       }}
     >
       {numSelected > 0 ? (
-        <Typography sx={{ flex: "1 1 100%" }} color="inherit" variant="subtitle1">
+        <Typography sx={{ flex: "1 1 80%" }} color="inherit" variant="subtitle1">
           {numSelected} items selected
         </Typography>
       ) : (
-        <Typography sx={{ flex: "1 1 100%" }} variant="h6">
+        <Typography sx={{ flex: "1 1 80%" }} variant="h6">
           Glossary
         </Typography>
       )}
@@ -167,11 +166,25 @@ function EnhancedTableToolbar({ numSelected, onDeleteSelected }) {
           </IconButton>
         </Tooltip>
       ) : (
-        <Tooltip title="Filter list (future)">
-          <IconButton>
-            <FilterListIcon />
-          </IconButton>
-        </Tooltip>
+
+        <Typography
+          variant="body2"
+          sx={{
+            px: 1.2,
+            py: 0.3,
+            borderRadius: 2,
+            backgroundColor: "#f0f0f0",
+            color: "#555",
+            fontWeight: 600
+          }}
+        >
+          {totalCount} items
+        </Typography>
+
+
+
+
+
       )}
     </Toolbar>
   );
@@ -267,7 +280,7 @@ export default function GlossaryTable({
   };
 
   const handleSaveEdit = async () => {
-    
+
     const original = data.find((item) => item.id === editIndex);
     if (!original) {
       console.warn("No original row found for editIndex:", editIndex);
@@ -336,6 +349,7 @@ export default function GlossaryTable({
     <Box sx={{ width: "100%" }}>
       <Paper sx={{ width: "100%", mb: 2, position: "relative" }}>
         <EnhancedTableToolbar
+          totalCount={dataRows.length}
           numSelected={selectedRows.length}
           onDeleteSelected={() => {
             setDeleteMode("bulk");

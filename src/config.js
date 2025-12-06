@@ -1,8 +1,7 @@
 
 
-// const BASE_URL = "/api/glossary";
-
-const BASE_URL = "http://localhost:3001/api/glossary";
+const BASE_URL = "/api/glossary";
+// const BASE_URL = "http://localhost:3001/api/glossary"; //for dev
 
 export const BASE_URLS = {
   BASE_URL,
