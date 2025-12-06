@@ -175,6 +175,7 @@ export default function Glossary() {
               />
               <Button
                 variant="contained"
+                type="button"
                 startIcon={<Add />}
                 onClick={() => setDialogOpen(true)}
                 sx={{
@@ -188,6 +189,7 @@ export default function Glossary() {
               </Button>
 
               <Button
+                type="button"
                 variant="outlined"
                 startIcon={<FileDown />}
                 onClick={exportData}

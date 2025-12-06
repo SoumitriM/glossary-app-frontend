@@ -9,7 +9,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
-import AddVariantDialog from "./AddVariantDialog";
+import AddVariantDialog from "../AddVariantDialog";
 
 const MultiFieldEditor = ({
   label,
@@ -19,6 +19,7 @@ const MultiFieldEditor = ({
 }) => {
   const containerRef = useRef(null);
 
+  // AddVariantDialog controller
   const [variantDialog, setVariantDialog] = useState({
     open: false,
     idx: null,
@@ -54,32 +55,7 @@ const MultiFieldEditor = ({
     if (variantDialog.mode === "add") {
       updated.push({ ...data });
     } else {
-      const old = updated[variantDialog.idx];
-      const merged = { ...old, ...data };
-
-      // REMOVE comment if empty
-      if (!("comment" in data) || data.comment === "") {
-        delete merged.comment;
-      }
-
-      // REMOVE note if empty
-      if (!("note" in data) || data.note === "") {
-        delete merged.note;
-      }
-
-      // REMOVE pos if empty
-      if (!("pos" in data) || data.pos === "") {
-        delete merged.pos;
-      }
-
-      // REMOVE gender if empty  (already fixed)
-      if (!("gender" in data) || data.gender === "") {
-        delete merged.gender;
-      }
-
-      updated[variantDialog.idx] = merged;
-
-
+      updated[variantDialog.idx] = { ...updated[variantDialog.idx], ...data };
     }
 
     onChange(updated);
@@ -103,15 +79,14 @@ const MultiFieldEditor = ({
   }, [scrollToBottom]);
 
   const mapGender = (g) =>
-    g === "m"
-      ? "maskulin"
-      : g === "f"
-        ? "feminin"
-        : g === "n"
-          ? "neutral"
-          : "";
+    g === "m" ? "maskulin"
+      : g === "f" ? "feminin"
+      : g === "n" ? "neutral"
+      : "";
 
-  const joinMeta = (...items) => items.filter(Boolean).join(" · ");
+  // Join with bullets but no bullet in the front
+  const joinMeta = (...items) =>
+    items.filter(Boolean).join(" · ");
 
   return (
     <Box
@@ -153,7 +128,8 @@ const MultiFieldEditor = ({
         {wordEntries.map((entry, idx) => {
           const metaLeft = joinMeta(
             entry.pos,
-            label === "Deutsch" ? mapGender(entry.gender) : ""
+            label === "Deutsch" ? mapGender(entry.gender) : "",
+            entry.register
           );
 
           return (
@@ -165,10 +141,10 @@ const MultiFieldEditor = ({
                 borderRadius: 2,
                 p: 1.2,
                 bgcolor: "white",
-                boxShadow: "0 0 3px rgba(0, 0, 0, 0.04)",
+                boxShadow: "0 0 3px rgba(0,0,0,0.04)",
               }}
             >
-              {/* META ROW */}
+              {/* ============ META ROW ============ */}
               {(metaLeft || true) && (
                 <Box
                   sx={{
@@ -178,6 +154,7 @@ const MultiFieldEditor = ({
                     mb: 0.8,
                   }}
                 >
+                  {/* LEFT SIDE (noun · maskulin · formal) */}
                   <Typography
                     variant="caption"
                     sx={{
@@ -188,6 +165,7 @@ const MultiFieldEditor = ({
                     {metaLeft}
                   </Typography>
 
+                  {/* RIGHT SIDE (Added by Soumitri) */}
                   <Typography
                     variant="caption"
                     sx={{
@@ -200,7 +178,7 @@ const MultiFieldEditor = ({
                 </Box>
               )}
 
-              {/* WORD + ACTIONS */}
+              {/* ============ WORD FIELD + ACTIONS ============ */}
               <Box
                 sx={{
                   display: "flex",
@@ -234,15 +212,15 @@ const MultiFieldEditor = ({
                 </Box>
               </Box>
 
-              {/* COMMENT */}
+              {/* ============ COMMENT (Separate Line) ============ */}
               {entry.comment?.trim() && (
                 <Typography
                   variant="caption"
                   sx={{
-                    mt: 0.5,
+                    mt: 1,
                     ml: 0.3,
                     fontStyle: "italic",
-                    color: "#777",
+                    color: "#555",
                     fontSize: "0.7rem",
                     display: "block",
                   }}
@@ -251,7 +229,7 @@ const MultiFieldEditor = ({
                 </Typography>
               )}
 
-              {/* INTERNAL NOTE */}
+              {/* ============ INTERNAL NOTE (Separate Line) ============ */}
               {entry.note?.trim() && (
                 <Typography
                   variant="caption"
@@ -289,7 +267,8 @@ const MultiFieldEditor = ({
         mode={variantDialog.mode}
         initialData={variantDialog.data}
         lang={label === "Deutsch" ? "de" : "en"}
-        onPOSChange={() => { }}
+        showPOS={true}
+        onPOSChange={() => {}}
         onClose={closeVariant}
         onSave={saveVariant}
       />

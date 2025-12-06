@@ -100,8 +100,8 @@ const AddDialog = ({
     </DialogContent>
 
     <DialogActions>
-      <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-      <Button variant="contained" startIcon={<Save />} onClick={handleAdd}>
+      <Button type="button" onClick={() => setDialogOpen(false)}>Cancel</Button>
+      <Button type="button" variant="contained"  startIcon={<Save />} onClick={handleAdd}>
         Save
       </Button>
     </DialogActions>

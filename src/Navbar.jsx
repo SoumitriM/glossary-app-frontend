@@ -45,6 +45,7 @@ export default function Navbar() {
      <div className="ml-auto flex items-center space-x-8 px-4">
   {username && <UserBadge username={username} />}
   <Button
+  type="button"
   variant="contained"
     onClick={handleLogout}
   >

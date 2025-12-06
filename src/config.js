@@ -1,9 +1,8 @@
-const PORT = 3002;
 
-const BASE_URL = import.meta.env.VITE_PRODUCTION_ENV === "true"
-  ? import.meta.env.VITE_PRODUCTION_URL
-  : `http://localhost:${PORT}/api/glossary`
-  ;
+
+// const BASE_URL = "/api/glossary";
+
+const BASE_URL = "http://localhost:3001/api/glossary";
 
 export const BASE_URLS = {
   BASE_URL,

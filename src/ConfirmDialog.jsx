@@ -18,7 +18,6 @@ export default function ConfirmDialog({
 }) {
   const handleConfirm = () => {
     onConfirm?.();
-    console.log("Changes saved!");
     onClose?.();
   };
 
@@ -39,10 +38,10 @@ export default function ConfirmDialog({
       </DialogContent>
 
       <DialogActions sx={{px: 3, pb: 3}}>
-        <Button onClick={onClose} color="inherit">
+        <Button  type="button" onClick={onClose} color="inherit">
           {secondaryBtnText}
         </Button>
-        <Button onClick={handleConfirm} variant="contained" color="primary">
+        <Button type="button" onClick={handleConfirm} variant="contained" color="primary">
           {primaryBtnText}
         </Button>
       </DialogActions>

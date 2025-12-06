@@ -12,8 +12,18 @@ import MultiFieldEditor from "./MultiFieldEditor";
 
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
 
-const EditDialog = ({ open, formType="Edit",onClose, onSave, editForm, setEditForm = () => { } }) => {
-  const [tempForm, setTempForm] = useState({ en: [{ word: "", comment: "" }], de: [{ word: "", comment: "" }] });
+const EditDialog = ({
+  open,
+  formType = "Edit",
+  onClose,
+  onSave,            // (cleanedData) => void
+  editForm,          // { en: [...], de: [...] }
+}) => {
+  const [tempForm, setTempForm] = useState({
+    en: [{ word: "", comment: "" }],
+    de: [{ word: "", comment: "" }],
+  });
+
   const [error, setError] = useState({ isError: false, message: "" });
 
   // When dialog opens, make a fresh temporary copy
@@ -30,31 +40,43 @@ const EditDialog = ({ open, formType="Edit",onClose, onSave, editForm, setEditFo
   const handleCancel = () => {
     if (editForm && editForm.en && editForm.de) {
       setTempForm(deepClone(editForm));
+    } else {
+      setTempForm({
+        en: [{ word: "", comment: "" }],
+        de: [{ word: "", comment: "" }],
+      });
     }
-    else setTempForm({ en: [{ word: "", comment: "" }], de: [{ word: "", comment: "" }] });
     setError({ isError: false, message: "" });
     onClose();
   };
 
-  const handleFinalSave = async () => {
+  const cleanEntry = (w) => {
+    const word = w.word?.trim() || "";
+    if (!word) return null;
+
+    const cleaned = { word };
+
+    if (w.comment?.trim()) cleaned.comment = w.comment.trim();
+    if (w.note?.trim()) cleaned.note = w.note.trim();
+    if (w.pos) cleaned.pos = w.pos;
+    if (w.gender) cleaned.gender = w.gender; // ONLY keep gender if non-empty
+
+    return cleaned;
+  };
+
+  const handleFinalSave = () => {
     const cleaned = {
-      en: tempForm.en
-        .map((w) => ({
-          ...w,
-          word: w.word.trim(),
-          comment: w.comment?.trim() || "",
-        }))
-        .filter((w) => w.word), // remove empty words
-      de: tempForm.de
-        .map((w) => ({
-          ...w,
-          word: w.word.trim(),
-          comment: w.comment?.trim() || "",
-        }))
-        .filter((w) => w.word),
+      en:
+        tempForm.en
+          .map(cleanEntry)
+          .filter(Boolean) || [],
+      de:
+        tempForm.de
+          .map(cleanEntry)
+          .filter(Boolean) || [],
     };
 
-    // ✅ Check if both en and de have at least one valid word
+    // At least one word in each language
     if (cleaned.en.length === 0 || cleaned.de.length === 0) {
       setError({
         isError: true,
@@ -63,7 +85,7 @@ const EditDialog = ({ open, formType="Edit",onClose, onSave, editForm, setEditFo
       return;
     }
 
-    // ✅ Check for duplicate words (within each language only)
+    // Duplicate detection (within each language)
     const hasDuplicate = (arr) => {
       const words = arr.map((w) => w.word.toLowerCase());
       return new Set(words).size !== words.length;
@@ -77,28 +99,8 @@ const EditDialog = ({ open, formType="Edit",onClose, onSave, editForm, setEditFo
       });
       return;
     }
-
-    // ✅ If all good, continue saving
-    console.log("Cleaned data to save:", cleaned);
-    setEditForm(cleaned);
-    const res = await onSave(cleaned);
-    console.log("Save response:", res);
-
-    if (res) {
-      console.log("Error saving:", res);
-      setError({ isError: true, message: res.message });
-      return;
-    }
-
-    // ✅ Reset temp form and close
-    setTempForm({
-      en: [{ word: "", comment: "" }],
-      de: [{ word: "", comment: "" }],
-    });
-    onClose();
+    onSave(cleaned);
   };
-
-
 
   return (
     <Dialog open={open} onClose={handleCancel} fullWidth maxWidth="lg">
@@ -133,16 +135,19 @@ const EditDialog = ({ open, formType="Edit",onClose, onSave, editForm, setEditFo
             />
           </Box>
         </Box>
+
         {error.isError && (
-          <Box sx={{ color: "red", mt: 2 }}>
-            *{error.message}
-          </Box>
+          <Box sx={{ color: "red", mt: 2 }}>*{error.message}</Box>
         )}
       </DialogContent>
 
-      <DialogActions sx={{px: 3, pb: 3}}>
-        <Button onClick={handleCancel}>Cancel</Button>
-        <Button variant="contained" onClick={handleFinalSave}>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button type="button" onClick={handleCancel}>Cancel</Button>
+        <Button
+          variant="contained"
+          type="button"     // prevent any default form submit
+          onClick={handleFinalSave}
+        >
           Save
         </Button>
       </DialogActions>
