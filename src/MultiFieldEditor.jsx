@@ -188,15 +188,15 @@ const MultiFieldEditor = ({
                     {metaLeft}
                   </Typography>
 
-                  <Typography
+                  {/* <Typography
                     variant="caption"
                     sx={{
                       fontStyle: "italic",
                       color: "#666",
                     }}
                   >
-                    Added by Soumitri
-                  </Typography>
+                    Added by User
+                  </Typography> */}
                 </Box>
               )}
 

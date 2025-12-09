@@ -96,7 +96,7 @@ export default function AddVariantDialog({
       fullWidth
       maxWidth="sm"
       PaperProps={{
-        sx: { height: "48vh" },
+        sx: { height: "45vh" },
       }}
     >
       <DialogTitle>
@@ -108,12 +108,12 @@ export default function AddVariantDialog({
           display: "flex",
           flexDirection: "column",
           gap: 2,
-          pt: 4,
+          pt: 12,
           mt: 1,
         }}
       >
         {/* WORD + POS + GENDER ROW */}
-        <Box sx={{ display: "flex", gap: 2 }}>
+        <Box sx={{ display: "flex", gap: 2, pt: 1 }}>
           <TextField
             label="Word *"
             required

@@ -56,7 +56,5 @@ vite.config.ts.timestamp-*
 pids/
 pids/*
 logs/*
-# dist/
 
-dist/
 dist/
