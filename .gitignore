@@ -57,4 +57,5 @@ pids/
 pids/*
 logs/*
 
+# dist/
 dist/

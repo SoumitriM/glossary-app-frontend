@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Button,
@@ -24,19 +24,22 @@ export default function Glossary() {
   const [searchLang, setSearchLang] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
 
-  // 📖 Fetch glossary entries
-  const fetchData = () => {
+  const fetchData = useCallback(async () => {
     const url =
       search !== ""
-        ? `${BASE_URLS.SEARCH}?q=${search}&lang=${searchLang}`
+        ? `${BASE_URLS.SEARCH}?q=${encodeURIComponent(search)}&lang=${searchLang}`
         : BASE_URLS.GET_ALL;
 
-    api
-      .get(url)
-      .then((json) => setData(json))
-      .catch(() => toast.error("Something went wrong! Failed to fetch glossary."))
-      .finally(() => setIsLoading(false));
-  };
+    try {
+      setIsLoading(true);
+      const json = await api.get(url);
+      setData(json);
+    } catch {
+      toast.error("Something went wrong! Failed to fetch glossary.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [search, searchLang]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -44,16 +47,14 @@ export default function Glossary() {
     }, 400);
 
     return () => clearTimeout(timeout);
-  }, [search, searchLang]);
+  }, [fetchData]);
 
-
-  // Delete single row
   const handleDeleteRow = async (id) => {
     try {
       setIsLoading(true);
       await api.delete(`${BASE_URLS.DELETE_ENTRY}/${id}`);
       toast.success("Entry deleted");
-      fetchData();
+      await fetchData();
     } catch {
       toast.error("Something went wrong! Failed to delete item.");
     } finally {
@@ -61,14 +62,14 @@ export default function Glossary() {
     }
   };
 
-  // Delete multiple rows
   const handleDeleteSelected = async (ids) => {
     if (!ids || ids.length === 0) return;
+
     try {
       setIsLoading(true);
       const result = await api.post(`${BASE_URLS.DELETE_MULTIPLE}`, { ids });
       toast.success(result.message || "Selected entries deleted");
-      fetchData();
+      await fetchData();
     } catch {
       toast.error("Something went wrong! Failed to delete selected items.");
     } finally {
@@ -76,27 +77,29 @@ export default function Glossary() {
     }
   };
 
-  // ✏️ Edit / Update glossary entry
-  const handleFinalEdit = async (updatedItem, id) => {
+  const handleFinalEdit = async (updatedItem, id, options = {}) => {
     try {
       setIsLoading(true);
       await api.put(`${BASE_URLS.UPDATE_ENTRY}/${id}`, updatedItem);
-      toast.success("Entry updated");
-      fetchData();
+      if (!options.suppressToast) {
+        toast.success("Entry updated");
+      }
+      await fetchData();
     } catch {
-      toast.error("Something went wrong! Failed to update entry.");
+      if (!options.suppressToast) {
+        toast.error("Something went wrong! Failed to update entry.");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ➕ Add new glossary entry
   const handleAdd = async (newItem) => {
     try {
       setIsLoading(true);
       await api.post(`${BASE_URLS.ADD_ENTRY}`, newItem);
       toast.success("Word added successfully");
-      fetchData();
+      await fetchData();
       setDialogOpen(false);
     } catch {
       toast.error("Something went wrong! Failed to add word.");
@@ -105,19 +108,22 @@ export default function Glossary() {
     }
   };
 
-  // 💾 Export JSON file
   const exportData = async () => {
     try {
       setIsLoading(true);
+
       const response = await fetch(BASE_URLS.EXPORT_JSON, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
 
-      if (!response.ok) throw new Error("Something went wrong! Export failed.");
+      if (!response.ok) {
+        throw new Error("Something went wrong! Export failed.");
+      }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
+
       link.href = url;
       link.download = "glossary_bilingual.json";
       document.body.appendChild(link);
@@ -133,104 +139,122 @@ export default function Glossary() {
     }
   };
 
-  // 🧩 UI
   return (
-    <>
-      {isLoading ? (
-        <Loader />
-      ) : (
-        <Box maxWidth="xl" mx="auto">
+    <Box maxWidth="xl" mx="auto" position="relative">
+      {isLoading && (
+        <Box
+          sx={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 2000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(255,255,255,0.45)",
+          }}
+        >
+          <Loader />
+        </Box>
+      )}
+
+      <Box
+        sx={{
+          opacity: isLoading ? 0.7 : 1,
+          pointerEvents: isLoading ? "none" : "auto",
+          transition: "opacity 0.2s ease",
+        }}
+      >
+        <Box
+          display="flex"
+          flexDirection={{ xs: "column", sm: "row" }}
+          alignItems={{ sm: "center" }}
+          justifyContent="space-between"
+          gap={4}
+        >
           <Box
             display="flex"
             flexDirection={{ xs: "column", sm: "row" }}
-            alignItems={{ sm: "center" }}
-            justifyContent="space-between"
-            gap={4}
+            gap={2}
           >
-            <Box
-              display="flex"
-              flexDirection={{ xs: "column", sm: "row" }}
-              gap={2}
-            >
-              <FormControl>
-                <Select
-                  value={columnOrder}
-                  onChange={(e) => setColumnOrder(e.target.value)}
-                  sx={{ width: 220 }}
-                >
-                  <MenuItem value="en-de">English → Deutsch</MenuItem>
-                  <MenuItem value="de-en">Deutsch → English</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-
-            <Box display="flex" gap={2} height="56px">
-              <TextField
-                label="Search"
-                variant="outlined"
-                fullWidth
-                value={search}
-                sx={{ minWidth: 400 }}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <Button
-                variant="contained"
-                type="button"
-                startIcon={<Add />}
-                onClick={() => setDialogOpen(true)}
-                sx={{
-                  height: "100%",
-                  minWidth: 160,
-                  backgroundColor: "#1976d2",
-                  "&:hover": { backgroundColor: "#1565c0" },
-                }}
+            <FormControl>
+              <Select
+                value={columnOrder}
+                onChange={(e) => setColumnOrder(e.target.value)}
+                sx={{ width: 220 }}
               >
-                Add Word
-              </Button>
-
-              <Button
-                type="button"
-                variant="outlined"
-                startIcon={<FileDown />}
-                onClick={exportData}
-                sx={{
-                  height: "100%",
-                  minWidth: 160,
-                  borderColor: "#1976d2",
-                  color: "#1976d2",
-                  "&:hover": {
-                    backgroundColor: "#e3f2fd",
-                    borderColor: "#1565c0",
-                    color: "#1565c0",
-                  },
-                }}
-              >
-                Export
-              </Button>
-            </Box>
+                <MenuItem value="en-de">English → Deutsch</MenuItem>
+                <MenuItem value="de-en">Deutsch → English</MenuItem>
+              </Select>
+            </FormControl>
           </Box>
 
-          <Box overflow="auto">
-            <GlossaryTable
-              data={data}
-              setData={setData}
-              searchLang={searchLang}
-              search={search}
-              columnOrder={columnOrder}
-              handleDeleteRow={handleDeleteRow}
-              handleDeleteSelected={handleDeleteSelected}
-              handleFinalEdit={handleFinalEdit}
+          <Box display="flex" gap={2} height="56px">
+            <TextField
+              label="Search"
+              variant="outlined"
+              fullWidth
+              value={search}
+              sx={{ minWidth: 400 }}
+              onChange={(e) => setSearch(e.target.value)}
             />
-          </Box>
 
-          <EditDialog
-            open={dialogOpen}
-            formType="Add"
-            onClose={() => setDialogOpen(false)}
-            onSave={handleAdd}
+            <Button
+              variant="contained"
+              type="button"
+              startIcon={<Add />}
+              onClick={() => setDialogOpen(true)}
+              sx={{
+                height: "100%",
+                minWidth: 160,
+                backgroundColor: "#1976d2",
+                "&:hover": { backgroundColor: "#1565c0" },
+              }}
+            >
+              Add Word
+            </Button>
+
+            <Button
+              type="button"
+              variant="outlined"
+              startIcon={<FileDown />}
+              onClick={exportData}
+              sx={{
+                height: "100%",
+                minWidth: 160,
+                borderColor: "#1976d2",
+                color: "#1976d2",
+                "&:hover": {
+                  backgroundColor: "#e3f2fd",
+                  borderColor: "#1565c0",
+                  color: "#1565c0",
+                },
+              }}
+            >
+              Export
+            </Button>
+          </Box>
+        </Box>
+
+        <Box overflow="auto">
+          <GlossaryTable
+            data={data}
+            setData={setData}
+            searchLang={searchLang}
+            search={search}
+            columnOrder={columnOrder}
+            handleDeleteRow={handleDeleteRow}
+            handleDeleteSelected={handleDeleteSelected}
+            handleFinalEdit={handleFinalEdit}
           />
         </Box>
-      )}
-    </>
+
+        <EditDialog
+          open={dialogOpen}
+          formType="Add"
+          onClose={() => setDialogOpen(false)}
+          onSave={handleAdd}
+        />
+      </Box>
+    </Box>
   );
 }

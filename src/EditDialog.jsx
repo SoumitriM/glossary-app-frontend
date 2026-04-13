@@ -117,6 +117,15 @@ const EditDialog = ({
         >
           <Box sx={{ flex: 1 }}>
             <MultiFieldEditor
+              label="Deutsch"
+              wordEntries={tempForm.de}
+              onChange={(val) => handleWordsChange("de", val)}
+              scrollToBottom={open}
+            />
+          </Box>
+           <Divider orientation="vertical" flexItem />
+          <Box sx={{ flex: 1 }}>
+            <MultiFieldEditor
               label="English"
               wordEntries={tempForm.en}
               onChange={(val) => handleWordsChange("en", val)}
@@ -124,16 +133,9 @@ const EditDialog = ({
             />
           </Box>
 
-          <Divider orientation="vertical" flexItem />
+         
 
-          <Box sx={{ flex: 1 }}>
-            <MultiFieldEditor
-              label="Deutsch"
-              wordEntries={tempForm.de}
-              onChange={(val) => handleWordsChange("de", val)}
-              scrollToBottom={open}
-            />
-          </Box>
+          
         </Box>
 
         {error.isError && (

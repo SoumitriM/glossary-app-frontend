@@ -20,6 +20,7 @@ import {
   Toolbar,
   Typography,
   Tooltip,
+  Switch,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -36,6 +37,7 @@ const getHeadCells = (columnOrder) =>
       { id: "lastModifiedBy", label: "Editor" },
       { id: "lastModifiedAt", label: "Timestamp" },
       { id: "edit", label: "Edit" },
+      { id: "hide", label: "Hide" },
       { id: "delete", label: "Delete" },
     ]
     : [
@@ -44,11 +46,56 @@ const getHeadCells = (columnOrder) =>
       { id: "lastModifiedBy", label: "Editor" },
       { id: "lastModifiedAt", label: "Timestamp" },
       { id: "edit", label: "Edit" },
+      { id: "hide", label: "Hide" },
       { id: "delete", label: "Delete" },
     ];
 
+function parseGermanTimestamp(value) {
+  if (!value || typeof value !== "string") return 0;
+  const [datePart, timePart] = value.split(", ");
+  if (!datePart || !timePart) return 0;
+  const [day, month, year] = datePart.split(".").map((v) => v.trim());
+  const [hour = "0", minute = "0", second = "0"] = timePart
+    .split(":")
+    .map((v) => v.trim());
+
+  const dayNum = Number(day);
+  const monthNum = Number(month);
+  const yearNum = Number(year);
+  const hourNum = Number(hour);
+  const minuteNum = Number(minute);
+  const secondNum = Number(second);
+
+  if (
+    Number.isNaN(dayNum) ||
+    Number.isNaN(monthNum) ||
+    Number.isNaN(yearNum) ||
+    Number.isNaN(hourNum) ||
+    Number.isNaN(minuteNum) ||
+    Number.isNaN(secondNum)
+  ) {
+    return 0;
+  }
+
+  return new Date(
+    yearNum,
+    monthNum - 1,
+    dayNum,
+    hourNum,
+    minuteNum,
+    secondNum
+  ).getTime();
+}
+
 function descendingComparator(a, b, orderBy) {
   if (a[orderBy] === undefined || b[orderBy] === undefined) return 0;
+
+  if (orderBy === "lastModifiedAt") {
+    const aTime = parseGermanTimestamp(a[orderBy]);
+    const bTime = parseGermanTimestamp(b[orderBy]);
+    return bTime - aTime;
+  }
+
   return String(b[orderBy]).localeCompare(String(a[orderBy]));
 }
 
@@ -104,7 +151,7 @@ function EnhancedTableHead({
             key={headCell.id}
             sortDirection={orderBy === headCell.id ? order : false}
           >
-            {headCell.id === "edit" || headCell.id === "delete" ? (
+            {headCell.id === "edit" || headCell.id === "delete" || headCell.id === "hide" ? (
               headCell.label
             ) : (
               <TableSortLabel
@@ -161,7 +208,15 @@ function EnhancedTableToolbar({ numSelected, onDeleteSelected, totalCount }) {
 
       {numSelected > 1 ? (
         <Tooltip title={`Delete ${numSelected} selected rows`}>
-          <IconButton onClick={onDeleteSelected}>
+          <IconButton
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.currentTarget.blur();
+              onDeleteSelected();
+            }}
+          >
             <DeleteIcon />
           </IconButton>
         </Tooltip>
@@ -195,11 +250,12 @@ export default function GlossaryTable({
   columnOrder,
   handleDeleteRow,
   handleDeleteSelected,
-  handleFinalEdit, // (payload, id) => Promise
+  handleFinalEdit, // (payload, id, options?) => Promise
 }) {
   const [selectedRows, setSelectedRows] = useState([]);
   const [order, setOrder] = useState(null);
   const [orderBy, setOrderBy] = useState(null);
+  const [hiddenRows, setHiddenRows] = useState({});
 
   const [visibleCount, setVisibleCount] = useState(40);
   const sentinelRef = useRef(null);
@@ -220,6 +276,7 @@ export default function GlossaryTable({
         deWords: entry.de?.map((d) => d.word).join(", ") || "",
         lastModifiedBy: entry.lastModifiedBy || "",
         lastModifiedAt: entry.lastModifiedAt || "",
+        hide: !!entry.hide,
         en: entry.en || [],
         de: entry.de || [],
       })),
@@ -228,7 +285,21 @@ export default function GlossaryTable({
 
   useEffect(() => setVisibleCount(40), [data]);
 
+  useEffect(() => {
+    const nextHidden = {};
+    data.forEach((entry) => {
+      nextHidden[entry.id] = !!entry.hide;
+    });
+    setHiddenRows(nextHidden);
+  }, [data]);
+
   const handleRequestSort = (_, property) => {
+    if (orderBy !== property && property === "lastModifiedAt") {
+      setOrder("desc");
+      setOrderBy(property);
+      return;
+    }
+
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
@@ -265,6 +336,15 @@ export default function GlossaryTable({
     setSelectedRows((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+  };
+
+  const handleToggleHide = (id) => {
+    const nextValue = !hiddenRows[id];
+    setHiddenRows((prev) => ({
+      ...prev,
+      [id]: nextValue,
+    }));
+    handleFinalEdit({ hide: nextValue }, id, { suppressToast: true });
   };
 
   const isSelected = (id) => selectedRows.includes(id);
@@ -388,12 +468,37 @@ export default function GlossaryTable({
                     </TableCell>
 
                     {getHeadCells(columnOrder).map((headCell) => {
+                      
+
                       if (headCell.id === "edit")
                         return (
                           <TableCell key="edit">
-                            <IconButton onClick={() => handleEditRow(row)}>
+                            <IconButton
+                              type="button"
+                              onClick={(e) => {
+                                // e.preventDefault();
+                                // e.stopPropagation();
+                                e.currentTarget.blur();
+                                handleEditRow(row);
+                              }}
+                            >
                               <EditIcon />
                             </IconButton>
+                          </TableCell>
+                        );
+                      if (headCell.id === "hide")
+                        return (
+                          <TableCell key="hide">
+                            <Switch
+                              size="small"
+                              checked={!!hiddenRows[row.id]}
+                              // onClick={(e) => {
+                              //   e.preventDefault();
+                              //   e.stopPropagation();
+                              // }}
+                              onChange={() => handleToggleHide(row.id)}
+                              inputProps={{ "aria-label": "toggle hide" }}
+                            />
                           </TableCell>
                         );
 
@@ -405,6 +510,7 @@ export default function GlossaryTable({
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
+                                e.currentTarget.blur();
 
                                 setRowToDelete(row.id);
                                 setDeleteMode("single");
