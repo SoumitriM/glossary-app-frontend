@@ -1,7 +1,6 @@
-
-
-const BASE_URL = "/api/glossary";
-// const BASE_URL = "http://localhost:3001/api/glossary"; //for dev
+const BASE_URL = import.meta.env.DEV
+  ? "http://localhost:3001/api/glossary"
+  : "/api/glossary";
 
 export const BASE_URLS = {
   BASE_URL,

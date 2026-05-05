@@ -12,6 +12,14 @@ import MultiFieldEditor from "./MultiFieldEditor";
 
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
 
+const createEmptyForm = () => ({
+  en: [{ word: "", comment: "" }],
+  de: [{ word: "", comment: "" }],
+});
+
+const hasEditableWords = (form) =>
+  Array.isArray(form?.en) && Array.isArray(form?.de);
+
 const EditDialog = ({
   open,
   formType = "Edit",
@@ -19,18 +27,18 @@ const EditDialog = ({
   onSave,            // (cleanedData) => void
   editForm,          // { en: [...], de: [...] }
 }) => {
-  const [tempForm, setTempForm] = useState({
-    en: [{ word: "", comment: "" }],
-    de: [{ word: "", comment: "" }],
-  });
+  const [tempForm, setTempForm] = useState(createEmptyForm);
 
   const [error, setError] = useState({ isError: false, message: "" });
 
-  // When dialog opens, make a fresh temporary copy
+  // When dialog opens, make a fresh temporary copy for edits or a blank form for adds.
   useEffect(() => {
-    if (open && editForm && editForm.en && editForm.de) {
-      setTempForm(deepClone(editForm));
-    }
+    if (!open) return;
+
+    setTempForm(
+      hasEditableWords(editForm) ? deepClone(editForm) : createEmptyForm()
+    );
+    setError({ isError: false, message: "" });
   }, [open, editForm]);
 
   const handleWordsChange = (lang, updatedWords) => {
@@ -38,13 +46,10 @@ const EditDialog = ({
   };
 
   const handleCancel = () => {
-    if (editForm && editForm.en && editForm.de) {
+    if (hasEditableWords(editForm)) {
       setTempForm(deepClone(editForm));
     } else {
-      setTempForm({
-        en: [{ word: "", comment: "" }],
-        de: [{ word: "", comment: "" }],
-      });
+      setTempForm(createEmptyForm());
     }
     setError({ isError: false, message: "" });
     onClose();
@@ -110,6 +115,7 @@ const EditDialog = ({
         <Box
           sx={{
             display: "flex",
+            flexDirection: { xs: "column", md: "row" },
             width: "100%",
             gap: 2,
             alignItems: "stretch",
@@ -123,7 +129,11 @@ const EditDialog = ({
               scrollToBottom={open}
             />
           </Box>
-           <Divider orientation="vertical" flexItem />
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={{ display: { xs: "none", md: "block" } }}
+          />
           <Box sx={{ flex: 1 }}>
             <MultiFieldEditor
               label="English"

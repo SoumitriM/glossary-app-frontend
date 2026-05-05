@@ -1,12 +1,83 @@
-# React + Vite
+# Glossary UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React/Vite frontend for managing bilingual glossary entries.
 
-Currently, two official plugins are available:
+## Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js 20+
+- npm
+- Glossary backend running locally for development
 
-## Expanding the ESLint configuration
+## Setup
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+```
+
+Local secrets belong in `.env`. Keep `.env` untracked and commit only safe examples such as `.env.example`.
+
+## Development
+
+```bash
+npm run dev
+```
+
+In development, the API base URL is:
+
+```text
+http://localhost:3001/api/glossary
+```
+
+## Production Build
+
+```bash
+npm run build
+```
+
+Production builds use the relative API path:
+
+```text
+/api/glossary
+```
+
+This behavior is controlled in `src/config.js` with `import.meta.env.DEV`, so you do not need to switch URLs manually before pushing to git.
+
+## Useful Scripts
+
+```bash
+npm run dev      # start Vite dev server
+npm run build    # create production build
+npm run preview  # preview production build locally
+npm run lint     # run ESLint
+```
+
+## Project Structure
+
+```text
+src/
+  apiClient.js          shared API wrapper and auth handling
+  config.js             API endpoint configuration
+  Glossary.jsx          main glossary screen and data fetching
+  Table.jsx             glossary table, sorting, selection, edit/delete/hide actions
+  EditDialog.jsx        add/edit entry dialog
+  MultiFieldEditor.jsx  language-specific word/variant editor
+  AddVariantDialog.jsx  add/edit variant dialog
+  Login.jsx             login/register screen
+```
+
+## Repo Hygiene
+
+Do not commit:
+
+- `.env` files
+- `.vite`
+- `dist`
+- generated build backups
+- archived experimental source copies under `src/archive`
+
+If old generated or archive files are still tracked by git, untrack them with:
+
+```bash
+git rm --cached .env
+git rm --cached -r old_dist_backup src/archive
+```

@@ -118,8 +118,8 @@ const MultiFieldEditor = ({
       ref={containerRef}
       sx={{
         mb: 3,
-        height: 400,
-        maxHeight: 400,
+        height: { xs: 320, md: 400 },
+        maxHeight: { xs: 320, md: 400 },
         overflowY: "auto",
         borderRadius: 2,
         border: "1px solid #e0e0e0",
@@ -169,7 +169,7 @@ const MultiFieldEditor = ({
               }}
             >
               {/* META ROW */}
-              {(metaLeft || true) && (
+              {metaLeft && (
                 <Box
                   sx={{
                     display: "flex",
@@ -289,7 +289,6 @@ const MultiFieldEditor = ({
         mode={variantDialog.mode}
         initialData={variantDialog.data}
         lang={label === "Deutsch" ? "de" : "en"}
-        onPOSChange={() => { }}
         onClose={closeVariant}
         onSave={saveVariant}
       />

@@ -16,7 +16,7 @@ export default function AddVariantDialog({
   initialData = {},
   lang = "en",          // "de" or "en"
   showPOS = false,      // control POS visibility from parent
-  onPOSChange = () => { },
+  onPOSChange = () => undefined,
   onClose,
   onSave,               // (data) => void
 }) {
@@ -113,7 +113,7 @@ export default function AddVariantDialog({
         }}
       >
         {/* WORD + POS + GENDER ROW */}
-        <Box sx={{ display: "flex", gap: 2, pt: 1 }}>
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, pt: 1 }}>
           <TextField
             label="Word *"
             required
@@ -126,7 +126,7 @@ export default function AddVariantDialog({
             <TextField
               select
               label="Word Type"
-              sx={{ width: "30%" }}
+              sx={{ width: { xs: "100%", sm: "30%" } }}
               value={form.pos}
               onChange={handleChange("pos")}
             >
@@ -142,7 +142,7 @@ export default function AddVariantDialog({
             <TextField
               select
               label="Gender"
-              sx={{ width: "30%" }}
+              sx={{ width: { xs: "100%", sm: "30%" } }}
               value={form.gender}
               onChange={handleChange("gender")}
             >

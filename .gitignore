@@ -2,9 +2,9 @@
 node_modules/
 
 # Local environment files
-# .env
-# .env.*
-# !.env.example   # keep example envs tracked
+.env
+.env.*
+!.env.example
 
 # Build output
 
@@ -41,6 +41,8 @@ coverage/
 # Optional cache dirs
 .cache/
 .vite/
+old_dist_backup/
+src/archive/
 vite.config.ts.timestamp-*
 
 # Mac or Linux hidden files
@@ -57,5 +59,6 @@ pids/
 pids/*
 logs/*
 
+# dist/
 # dist/
 dist/

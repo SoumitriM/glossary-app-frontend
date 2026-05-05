@@ -112,10 +112,17 @@ function EnhancedTableHead({
   orderBy,
   onRequestSort,
   columnOrder,
-  selectedCount,
-  clearSelection,
-  totalVisibleRows,
+  visibleRowIds,
+  selectedRowIds,
+  onSelectVisibleRows,
 }) {
+  const visibleSelectedCount = visibleRowIds.filter((id) =>
+    selectedRowIds.includes(id)
+  ).length;
+  const hasVisibleRows = visibleRowIds.length > 0;
+  const allVisibleSelected =
+    hasVisibleRows && visibleSelectedCount === visibleRowIds.length;
+
   const createSortHandler = (property) => (event) =>
     onRequestSort(event, property);
 
@@ -136,13 +143,14 @@ function EnhancedTableHead({
       >
         <TableCell padding="checkbox">
           <Checkbox
-            checked={selectedCount > 0}
+            checked={allVisibleSelected}
             indeterminate={
-              selectedCount > 0 && selectedCount < totalVisibleRows
+              visibleSelectedCount > 0 && visibleSelectedCount < visibleRowIds.length
             }
             onChange={() => {
-              if (selectedCount > 0) clearSelection();
+              onSelectVisibleRows(allVisibleSelected ? "clear" : "select");
             }}
+            disabled={!hasVisibleRows}
           />
         </TableCell>
 
@@ -312,6 +320,7 @@ export default function GlossaryTable({
   }, [dataRows, order, orderBy]);
 
   const visibleRows = sortedRows.slice(0, visibleCount);
+  const visibleRowIds = visibleRows.map((row) => row.id);
 
   const loadMore = useCallback(() => {
     setVisibleCount((prev) => Math.min(prev + 40, sortedRows.length));
@@ -338,13 +347,34 @@ export default function GlossaryTable({
     );
   };
 
-  const handleToggleHide = (id) => {
+  const handleToggleHide = async (id) => {
     const nextValue = !hiddenRows[id];
     setHiddenRows((prev) => ({
       ...prev,
       [id]: nextValue,
     }));
-    handleFinalEdit({ hide: nextValue }, id, { suppressToast: true });
+    const saved = await handleFinalEdit(
+      { hide: nextValue },
+      id,
+      { suppressToast: true }
+    );
+
+    if (!saved) {
+      setHiddenRows((prev) => ({
+        ...prev,
+        [id]: !nextValue,
+      }));
+    }
+  };
+
+  const handleSelectVisibleRows = (mode) => {
+    setSelectedRows((prev) => {
+      if (mode === "clear") {
+        return prev.filter((id) => !visibleRowIds.includes(id));
+      }
+
+      return Array.from(new Set([...prev, ...visibleRowIds]));
+    });
   };
 
   const isSelected = (id) => selectedRows.includes(id);
@@ -449,9 +479,9 @@ export default function GlossaryTable({
               orderBy={orderBy}
               onRequestSort={handleRequestSort}
               columnOrder={columnOrder}
-              selectedCount={selectedRows.length}
-              clearSelection={() => setSelectedRows([])}
-              totalVisibleRows={visibleRows.length}
+              visibleRowIds={visibleRowIds}
+              selectedRowIds={selectedRows}
+              onSelectVisibleRows={handleSelectVisibleRows}
             />
 
             <TableBody>

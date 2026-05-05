@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import uniLogo from "./assets/images/upb_logo.jpg";
 import glossaryLogo from "./assets/images/glossary_logo.png";
 import UserBadge from "./UserBadge";
@@ -7,14 +7,10 @@ import { Button } from "@mui/material";
 export default function Navbar() {
   const navigate = useNavigate();
 
-  const navLinkClass = ({ isActive }) =>
-    `block px-6 py-4 text-white font-semibold hover:bg-gray-700 transition-all duration-200 ${isActive ? "bg-gray-600" : "hover:bg-gray-600"
-    }`;
-
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
-    navigate("/login"); // or window.location.href = "/login"
+    navigate("/login");
   };
   
   const username = localStorage.getItem("username");
@@ -33,7 +29,7 @@ export default function Navbar() {
 
       <div
         className="flex-1 flex justify-center cursor-pointer"
-        onClick={() => window.location.reload()}
+        onClick={() => navigate("/")}
       >
         <img
           src={glossaryLogo}

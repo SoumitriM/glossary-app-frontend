@@ -21,8 +21,12 @@ export default function Glossary() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
-  const [searchLang, setSearchLang] = useState("all");
-  const [isLoading, setIsLoading] = useState(false);
+  const searchLang = "all";
+  const [isFetching, setIsFetching] = useState(false);
+  const [isMutating, setIsMutating] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const isLoading = isFetching || isMutating || isExporting;
 
   const fetchData = useCallback(async () => {
     const url =
@@ -31,13 +35,13 @@ export default function Glossary() {
         : BASE_URLS.GET_ALL;
 
     try {
-      setIsLoading(true);
+      setIsFetching(true);
       const json = await api.get(url);
       setData(json);
     } catch {
       toast.error("Something went wrong! Failed to fetch glossary.");
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
     }
   }, [search, searchLang]);
 
@@ -51,14 +55,14 @@ export default function Glossary() {
 
   const handleDeleteRow = async (id) => {
     try {
-      setIsLoading(true);
+      setIsMutating(true);
       await api.delete(`${BASE_URLS.DELETE_ENTRY}/${id}`);
       toast.success("Entry deleted");
       await fetchData();
     } catch {
       toast.error("Something went wrong! Failed to delete item.");
     } finally {
-      setIsLoading(false);
+      setIsMutating(false);
     }
   };
 
@@ -66,37 +70,39 @@ export default function Glossary() {
     if (!ids || ids.length === 0) return;
 
     try {
-      setIsLoading(true);
+      setIsMutating(true);
       const result = await api.post(`${BASE_URLS.DELETE_MULTIPLE}`, { ids });
       toast.success(result.message || "Selected entries deleted");
       await fetchData();
     } catch {
       toast.error("Something went wrong! Failed to delete selected items.");
     } finally {
-      setIsLoading(false);
+      setIsMutating(false);
     }
   };
 
   const handleFinalEdit = async (updatedItem, id, options = {}) => {
     try {
-      setIsLoading(true);
+      setIsMutating(true);
       await api.put(`${BASE_URLS.UPDATE_ENTRY}/${id}`, updatedItem);
       if (!options.suppressToast) {
         toast.success("Entry updated");
       }
       await fetchData();
+      return true;
     } catch {
       if (!options.suppressToast) {
         toast.error("Something went wrong! Failed to update entry.");
       }
+      return false;
     } finally {
-      setIsLoading(false);
+      setIsMutating(false);
     }
   };
 
   const handleAdd = async (newItem) => {
     try {
-      setIsLoading(true);
+      setIsMutating(true);
       await api.post(`${BASE_URLS.ADD_ENTRY}`, newItem);
       toast.success("Word added successfully");
       await fetchData();
@@ -104,23 +110,15 @@ export default function Glossary() {
     } catch {
       toast.error("Something went wrong! Failed to add word.");
     } finally {
-      setIsLoading(false);
+      setIsMutating(false);
     }
   };
 
   const exportData = async () => {
     try {
-      setIsLoading(true);
-
-      const response = await fetch(BASE_URLS.EXPORT_JSON, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-
-      if (!response.ok) {
-        throw new Error("Something went wrong! Export failed.");
-      }
-
-      const blob = await response.blob();
+      setIsExporting(true);
+      const blob = await api.blob(BASE_URLS.EXPORT_JSON);
+      if (!blob) return;
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
 
@@ -135,7 +133,7 @@ export default function Glossary() {
     } catch {
       toast.error("Error exporting data");
     } finally {
-      setIsLoading(false);
+      setIsExporting(false);
     }
   };
 
@@ -188,13 +186,19 @@ export default function Glossary() {
             </FormControl>
           </Box>
 
-          <Box display="flex" gap={2} height="56px">
+          <Box
+            display="flex"
+            flexDirection={{ xs: "column", sm: "row" }}
+            gap={2}
+            width={{ xs: "100%", sm: "auto" }}
+            minHeight={{ sm: "56px" }}
+          >
             <TextField
               label="Search"
               variant="outlined"
               fullWidth
               value={search}
-              sx={{ minWidth: 400 }}
+              sx={{ minWidth: { xs: "100%", sm: 260, md: 400 } }}
               onChange={(e) => setSearch(e.target.value)}
             />
 
@@ -238,9 +242,6 @@ export default function Glossary() {
         <Box overflow="auto">
           <GlossaryTable
             data={data}
-            setData={setData}
-            searchLang={searchLang}
-            search={search}
             columnOrder={columnOrder}
             handleDeleteRow={handleDeleteRow}
             handleDeleteSelected={handleDeleteSelected}

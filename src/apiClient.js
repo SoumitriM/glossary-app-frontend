@@ -31,6 +31,26 @@ export async function apiFetch(url, options = {}) {
 
 export const api = {
   get: (url) => apiFetch(url, { method: "GET" }),
+  blob: async (url, options = {}) => {
+    const token = localStorage.getItem("token");
+    const headers = {
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    };
+
+    const response = await fetch(url, { ...options, headers });
+    if (response.status === 401) {
+      toast.warn("Session expired. Please log in again.");
+      localStorage.clear();
+      window.location.href = "/login";
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    return response.blob();
+  },
   post: (url, body = {}) =>
     apiFetch(url, { method: "POST", body: JSON.stringify(body) }),
   put: (url, body = {}) =>
